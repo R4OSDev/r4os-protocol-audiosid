@@ -1,15 +1,15 @@
 const r4os = @import("r4os");
 
 comptime {
-    asm (r4os.r4dev.protocolEntriesAsm("sid_init", "sid_shutdown", "sid_query", "sid_dispatch"));
+    if (!@import("builtin").is_test) asm (r4os.technical2.protocolEntriesAsm("sid_init", "sid_shutdown", "sid_query", "sid_dispatch"));
 }
 
-export fn sid_init(api: *const r4os.r4dev.ProtocolApi) callconv(.c) i32 {
-    var ctx = r4os.r4dev.ProtocolContext.init(api);
-    ctx.logInfo("SID.R4P init");
-    _ = ctx.registerRole("audio.sid", .audio, 0);
-    _ = ctx.setStatus(.active, "SID protocol R4P active");
-    return 0;
+export fn sid_init(api: *const r4os.r4dev.ProtocolApi2) callconv(.c) i32 {
+    const ctx = r4os.r4dev.ProtocolContext2.init(api);
+    if (!ctx.requires(.{ "register_role", "set_status" })) return r4os.abi.err_no_fn;
+    const registered = ctx.registerRole("audio.sid", .audio, 0);
+    if (registered != 0) return registered;
+    return ctx.setStatus(.active, "SID protocol R4P active");
 }
 
 export fn sid_shutdown() callconv(.c) i32 {
@@ -110,9 +110,11 @@ fn registerKind(reg: u8) u8 {
 }
 
 fn requestFromBuffer(buffer: *const r4os.abi.ProtocolBuffer) ?*r4os.abi.AudioSidOp {
-    if (buffer.data == null) return null;
-    if (buffer.len < @sizeOf(r4os.abi.AudioSidOp)) return null;
-    return @ptrCast(@alignCast(buffer.data.?));
+    const native = r4os.native_protocol_view;
+    // These are caller-owned native classifier records, not timed PCM/device
+    // submissions. Their exclusive dispatch loan ends at this return.
+    var metadata = buffer.*;
+    return (native.InOut(r4os.abi.AudioSidOp).init(&metadata, native.Policy.record(r4os.abi.AudioSidOp, .inout, .prefix)) catch return null).value;
 }
 
 fn note(comptime text: []const u8) [64]u8 {

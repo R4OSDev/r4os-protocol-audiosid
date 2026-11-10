@@ -1,22 +1,26 @@
 ﻿SID.R4P
 =======
 
-Projektstruktur seit 0.51.22
---------------------------------
+Eigenstaendiges Zig-Protokollprojekt unter Repositories/Protocols/AudioSid.
+Build- und Versionswahrheit ist module.R4MF.
 
-Dieses Verzeichnis ist ein eigenstaendiges R4OS-SDK-Projekt fuer SID.R4P.
+Anschluss: SDK_PROFILE=r4os-zig-r4p-generation2; R4DEV:Query2:2 und
+ProtocolInit2:2. r4os.technical2.protocolEntriesAsm erzeugt die Entries;
+ProtocolContext2 prueft die wirkliche ProtocolApi2 in ihrem geliehenen Scope.
+register_role und set_status sind vor Registrierung erforderlich. Deren
+konkrete Fehlercodes werden weitergegeben. Die Revision der technischen
+Tabelle ist unabhaengig vom Query2-/Entry-Symbolraum.
 
-Build:
+Native AudioSidOp-Praefixe bleiben caller-eigen und exklusiv bis zum Dispatch-Ruecklauf. Gemeinsame NativeProtocolView prueft Metadaten und Ausrichtung. Modell6581/8580, Register, Voice/Filter und D400-D7FF-Spiegelung bleiben unveraendert. Der Klassifizierer besitzt keine SID-Instanz, Device-Clock oder laufenden PCM-Transfer.
 
-    cd Code\System\Protocols\AudioSid
-    ..\..\..\DevTools\Zig\zig.exe build
+Build aus diesem Projektordner:
+    Linux: ./Build.sh
+    Windows: Build.bat
+Beide Starter verwenden dieselbe PowerShell7-Logik und SDK-Auswahl.
+Workspace-Artefakt: Artifacts/Modules/AudioSid/SID.R4P
+Image-Ziel: /R4OS/PROTOCOLS/SID.R4P
+IMAGE_SCOPE=full
 
-Artefakt:
-
-    zig-out\SID.R4P
-
-Manifest:
-
-    module.R4MF
-
-Image-Zielpfad: C:\R4OS\PROTOCOLS\SID.R4P
+Abnahme: vorhandene SPECTRA CHECK LOADER und SYNTHD im passenden Testimage;
+bei expliziter API2-Pruefung normaler DEV2-Aufrufer. Windows-Kompilierung
+allein belegt keine Windowsausfuehrung oder physische Audiowiedergabe.
